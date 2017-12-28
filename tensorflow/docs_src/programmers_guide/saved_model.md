@@ -6,7 +6,7 @@
 
 ## 保存和恢复变量
 
-TensorFlow 变量提供了表示程序所操作的共享、持续状态的最佳方式。 (更多信息请查阅 @{$variables$Variables}。)
+TensorFlow 变量提供了表示程序所操作的共享、持续状态的最佳方式。（更多信息请查阅 @{$variables$Variables}。)
 该节阐述了如何保存和恢复变量。需注意 Estimator 会自动保存和恢复变量（在 `model_dir` 中）。
 
 `tf.train.Saver` 类提供了保存和恢复模型的方法。
