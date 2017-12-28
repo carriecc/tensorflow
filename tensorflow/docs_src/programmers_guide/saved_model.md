@@ -1,18 +1,18 @@
 # 保存和恢复
 
 本文介绍了如何保存、恢复
-@{$variables$variables}和模型。
+@{$variables$variables} 和模型。
 
 
 ## 保存和恢复变量
 
 TensorFlow 变量提供了表示程序所操作的共享、持续状态的最佳方式。 (更多信息请查阅 @{$variables$Variables}。)
-该节阐述了如何保存和恢复变量。需注意 Estimator会自动保存和恢复变量（在 `model_dir` 中）。
+该节阐述了如何保存和恢复变量。需注意 Estimator 会自动保存和恢复变量（在 `model_dir` 中）。
 
 `tf.train.Saver` 类提供了保存和恢复模型的方法。
-`tf.train.Saver` 造器为图形中所有或指定列表的变量添加 `save` 和 `restore` 操作（op, operation）。 该 `Saver` 对象提供了运行这些 op 的方法，并指定了检查点文件写入和读取的路径。
+`tf.train.Saver` 构造器为图形中所有或指定列表的变量添加 `save` 和 `restore` 操作（op, operation）。 该 `Saver` 对象提供了运行这些 op 的方法，并指定了检查点文件写入和读取的路径。
 
-保存程序可以恢复模型中已定义的所有变量。如果您在不知道如何构建图形的情况下载入了一个模型（例如，您正编写一个载入模型的通用程序），那么请查阅本文后续章节[保存和恢复模型](#models)概述。
+保存程序可以恢复模型中已定义的所有变量。如果您在不知道如何构建图形的情况下载入了一个模型（例如，您正编写一个载入模型的通用程序），那么请查阅本文后续章节[保存和恢复模型概述](#models)。
 
 TensorFlow 在二进制**检查点文件**中保存变量，粗略地讲，将变量名映射到张量值。 
 
@@ -81,7 +81,7 @@ with tf.Session() as sess:
 
 为检查点文件中的变量明确指定名称有时是很有用的。例如，您训练了一个模型，包含一个名称为 `"weights"` 的变量，将 `"weights"` 变量的值恢复到名为 `"params"` 的变量中。
 
-仅保存或恢复模型使用变量的一个子集有时也是非常有用的。例如，您已经训练一个五层的神经网络，现在您想要训练一个六层模型，复用已经训练好的五层的现有权重。那么您就可以使用保存程序恢复前五层的权重了。
+仅保存或恢复模型所使用变量的一个子集有时也是非常有用的。例如，您已经训练一个五层的神经网络，现在想要训练一个六层模型，复用已经训练好的五层的现有权重。那么您就可以使用保存程序恢复前五层的权重了。
 
 通过传递如下之一的参数给 `tf.train.Saver()` 构造器，您可以轻易的指定保存和下载的名称和变量：
 
@@ -111,17 +111,15 @@ with tf.Session() as sess:
 
 注意：
 
-*  如果您需要储存模型变量的不同子集，您可以根据需要创建足够多的 `Saver` 对象。同一变量可以在多个 `saver` 对象中列出；只有在 `Saver.restore()` 方法运行时它的值才会改变。
+*  如果您需要储存模型变量的不同子集，可以根据需要创建足够多的 `Saver` 对象。同一变量可以在多个 `saver` 对象中列出；只有在 `Saver.restore()` 方法运行时它的值才会改变。
 
 *  如果您仅在会话开始时恢复模型变量的一个子集，那么您必须为其他变量运行一个初始化 op。更多信息请查阅 @{tf.variables_initializer}。
 
-*  To inspect the variables in a checkpoint, you can use the
+*  您可以使用
    [`inspect_checkpoint`](https://www.tensorflow.org/code/tensorflow/python/tools/inspect_checkpoint.py)
-   library, particularly the `print_tensors_in_checkpoint_file` function.
+   库检查检查点文件中的变量，尤其是 `print_tensors_in_checkpoint_file` 函数。
 
-*  By default, `Saver` uses the value of the @{tf.Variable.name} property
-   for each variable.  However, when you create a `Saver` object, you may
-   optionally choose names for the variables in the checkpoint files.
+*  默认情况下，`Saver` 使用每个变量的 @{tf.Variable.name} 属性值。但是，创建 `Saver` 对象时，您可以为检查点文件中的变量随意选择名称。
 
 
 ### 检查检查点文件中的变量
@@ -177,7 +175,7 @@ chkp.print_tensors_in_checkpoint_file("/tmp/model.ckpt", tensor_name='v2', all_t
 
 如果需要将资产保存、写入或拷贝到磁盘，那么可以在添加第一个 `MetaGraphDef` 时提供这些资源。如果多个 `MetaGraphDef` 与同名资产相关联，则仅保留第一个版本。
 
-添加到 SavedModel 的 `MetaGraphDef` 必须用用户指定的标签进行注释。标签提供了一种方法来表示要加载和恢复的特殊 `MetaGraphDef`，以及共享的变量和资产集。这些标签通常用 `MetaGraphDef` 的功能（如服务或训练）来进行注释，选择性的用硬件特性（如 GPU）来注释。
+添加到 SavedModel 的 `MetaGraphDef` 必须使用用户指定的标签进行注释。标签提供了一种方法来表示要加载和恢复的特殊 `MetaGraphDef`，以及共享的变量和资产集。这些标签通常用 `MetaGraphDef` 的功能（如服务或训练）来进行注释，选择性的用硬件特性（如 GPU）来注释。
 
 例如，如下代码推荐了一种使用 `SavedModelBuilder` 创建 SavedModel 的典型方法:
 
@@ -209,7 +207,7 @@ Python 版本的 SavedModel
 
 * 恢复图形定义和变量的会话。
 * 标签用于标识需要加载的 MetaGraphDe。
-* SavedModel的位置（目录）。
+* SavedModel 的位置（目录）。
 
 加载时，作为指定 MetaGraphDef 的一部分提供的变量、资产和签名的子集将被恢复到提供的会话中。
 
@@ -308,7 +306,7 @@ def serving_input_receiver_fn():
 
 即使您不需要解析或其他输入处理 — 也就是说, 如果服务系统直接给出特征 `Tensor`, 您仍然必须提供一个 `serving_input_receiver_fn ()`, 为特征张量创建占位符并传递它们。@{tf.estimator.export.build_raw_serving_input_receiver_fn} 实用程序提供了此功能。
 
-如果这些程序还不能满足您的需求，您可以编写自己的 `serving_input_receiver_fn()`。一种可能需要的情况是，您训练的 `input_fn()` 包含了一些必须在服务时间总结的预处理逻辑。了降低训练-服务倾斜的风险，建议用一个函数封装这些处理，然后从 `input_fn()` 和 `serving_input_receiver_fn()` 中调用该函数。
+如果这些程序还不能满足您的需求，您可以编写自己的 `serving_input_receiver_fn()`。一种可能需要的情况是，您训练的 `input_fn()` 包含了一些必须在服务时间总结的预处理逻辑。为了降低训练-服务倾斜的风险，建议用一个函数封装这些处理，然后从 `input_fn()` 和 `serving_input_receiver_fn()` 中调用该函数。
 
 注意，`serving_input_receiver_fn()` 还确定了签名的*输入*部分。也就是说，在编写 `aserving_input_receiver_fn()` 时，您必须告诉解析器所期望的签名以及如何将它们映射到模型的预期输入。相比之下, 签名的*输出*部分由模型确定。
 
@@ -331,7 +329,7 @@ estimator.export_savedmodel(export_dir_base, serving_input_receiver_fn)
 
 编写一个自定义 `model_fn` 时，必须填充 @{tf.estimator.EstimatorSpec} 返回值的 `export_outputs` 元素。这是 `{name: output}` 描述在服务期间导出和使用的输出签名的 dict。
 
-在通常的情况下作出一个单一的预测, 这个dict包含一个元素, `name` 无关紧要。在多头模型中, 每个头由这个 dict 中的一个条目表示。在这种情况下, `name` 是您选择的字符串, 可用于在服务时间请求特定的头部。
+在通常情况下作出一个单一的预测, 这个 dict 包含一个元素, `name` 无关紧要。在多头部模型中, 每个头部由这个 dict 中的一个条目表示。在这种情况下, `name` 是您选择的字符串, 可用于在服务时间请求特定的头部。
 
 每一个 `output` 值都必须是一个 `ExportOutput` 对象，如
 @{tf.estimator.export.ClassificationOutput},
@@ -341,7 +339,7 @@ estimator.export_savedmodel(export_dir_base, serving_input_receiver_fn)
 这些输出类型直接映射到
 [TensorFlow 服务 API](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/apis/prediction_service.proto), 因此确定哪些请求类型将被授予。
 
-注意: 在多头部情况下, 将为从 model_fn 返回的 `export_outputs` dict中的每个元素生成一个 `SignatureDef`, 使用相同的键命名。这些 `SignatureDef` 仅在其输出中有所不同, 因为由相应的 `ExportOutput` 条目所提供。输入总是由 `serving_input_receiver_fn` 提供。推理请求可以按名称指定头。头必须使用  [`signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY`](https://www.tensorflow.org/code/tensorflow/python/saved_model/signature_constants.py) 命名，在推理请求未指定一个 `SignatureDef` 时指出将提供服务的SignatureDef。
+注意: 在多头部情况下, 将为从 model_fn 返回的 `export_outputs` dict 中的每个元素生成一个 `SignatureDef`, 使用相同的键命名。这些 `SignatureDef` 仅在其输出中有所不同, 因为由相应的 `ExportOutput` 条目所提供。输入总是由 `serving_input_receiver_fn` 提供。推理请求可以按名称指定头部。头部必须使用  [`signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY`](https://www.tensorflow.org/code/tensorflow/python/saved_model/signature_constants.py) 命名，在推理请求未指定一个 `SignatureDef` 时指出将提供服务的 SignatureDef。
 
 
 ### 在本地为输出的模型提供服务
@@ -422,7 +420,7 @@ from contrib to core. -->
 
 
 
-## 使用CLI检查和执行 SavedModel
+## 使用 CLI 检查和执行 SavedModel
 
 您可以使用 SavedModel 命令行接口（CLI）来检查和执行 SavedModel。例如，使用 CLI 检查模型的 `SignatureDef`。CLI 可以让您迅速确认输入
 @{$tensors$Tensor dtype and shape} 和模型匹配。此外，如果您想要测试模型，可以使用 CLI， 通过传入各种格式(例如, Python 表达式) 的示例输入, 然后获取输出来进行完整性检查。
@@ -432,12 +430,12 @@ from contrib to core. -->
 
 广义上讲，您可以通过以下两种方式安装 TensorFlow：
 
-*  通过安装预先构建的TensorFlow 二进制文件。
-*  通过从源码创建TensorFlow。
+*  通过安装预先构建的 TensorFlow 二进制文件。
+*  通过从源码创建 TensorFlow。
 
 如果您通过预先构建的 TensorFlow 二进制文件来安装 TensorFlow，那么 SavedModel CLI 已经安装在您系统中名为 `bin\saved_model_cli` 的路径下。
 
-如果您是从源码创建TensorFlow，那么您必须要运行如下额外的命令来创建 `saved_model_cli`：
+如果您是从源码创建 TensorFlow，那么您必须要运行如下额外的命令来创建 `saved_model_cli`：
 
 ```
 $ bazel build tensorflow/python/tools:saved_model_cli
@@ -447,13 +445,13 @@ $ bazel build tensorflow/python/tools:saved_model_cli
 
 SavedModel CLI 支持如下两个在 SavedModel 中 `MetaGraphDef` 上的命令:
 
-* `show`，展示SavedModel 中 `MetaGraphDef` 上的计算。
+* `show`，展示 SavedModel 中 `MetaGraphDef` 上的计算。
 * `run`，运行 `MetaGraphDef` 上的计算。
 
 
 ### `show` 命令
 
-一个 SavedModel 包含一个或多个 `MetaGraphDef`，通过标签集区分。服务模型时，您可能想要指导每个模型中 `SignatureDef` 的类型以及它们的输入输出是什么。`show` 命令允许您按分层顺序检查 SavedModel 的内容。语法如下：
+一个 SavedModel 包含一个或多个 `MetaGraphDef`，通过标签集区分。服务模型时，您可能想要知道每个模型中 `SignatureDef` 的类型以及它们的输入输出是什么。`show` 命令允许您按分层顺序检查 SavedModel 的内容。语法如下：
 
 ```
 usage: saved_model_cli show [-h] --dir DIR [--all]
@@ -483,13 +481,13 @@ SignatureDef key: "regress_x_to_y2"
 SignatureDef key: "serving_default"
 ```
 
-如果一个 `MetaGraphDef`  在标签集中包含了*多个*标签，那么您必须标识所有标签，每个标签需要用逗号隔开，如：
+如果一个 `MetaGraphDef` 在标签集中包含了*多个*标签，那么您必须标识所有标签，每个标签需要用逗号隔开，如：
 
 ```none
 $ saved_model_cli show --dir /tmp/saved_model_dir --tag_set serve,gpu
 ```
 
-若要显示特定 `SignatureDef` 的所有输入和输出 TensorInfo，需将 `SignatureDef` 密钥传递给 `signature_def` 选项。当您想知道稍后用于执行计算图的输入张量的张量键值, dtype 和形状时, 这是非常有用的。例如:
+若要显示特定 `SignatureDef` 的所有输入和输出 TensorInfo，需将 `SignatureDef` 密钥传递给 `signature_def` 选项。当您想知道稍后用于执行计算图的输入张量的张量键值、 dtype 和形状时, 这是非常有用的。例如:
 
 ```
 $ saved_model_cli show --dir \
@@ -557,7 +555,7 @@ usage: saved_model_cli run [-h] --dir DIR --tag_set TAG_SET --signature_def
 `run` 命令提供了如下两种方式将输入传递到模型中：
 
 * `--inputs` 选项允许您在文件中传递 numpy ndarray。
-* `--input_exprs` 选项允许您传递Python 表达式。
+* `--input_exprs` 选项允许您传递 Python 表达式。
 
 
 #### `--inputs`
@@ -694,7 +692,7 @@ saved_model.pb|saved_model.pbtxt
 * `variables` 是一个包含 `tf.train.Saver` 输出的子文件夹。
 * `saved_model.pb` 或 `saved_model.pbtxt` 是 SavedModel 协议缓冲区。它包含了作为 `MetaGraphDef` 协议缓冲区的图形定义。
 
-单个 SavedModel 可以表示多个图形。在这种情况下, SavedModel 中的所有图形共享一组检查点 (变量) 和资产。例如, 下图显示了一个包含3个 `MetaGraphDef` 的 SavedModel, 三个图形共享同一组检查点和资产: 
+单个 SavedModel 可以表示多个图形。在这种情况下, SavedModel 中的所有图形共享一组检查点 (变量) 和资产。例如, 下图显示了一个包含 3 个 `MetaGraphDef` 的 SavedModel, 三个图形共享同一组检查点和资产: 
 
 ![SavedModel represents checkpoints, assets, and one or more MetaGraphDefs](../images/SavedModel.svg)
 
