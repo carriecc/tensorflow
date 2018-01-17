@@ -7,19 +7,19 @@
 ## 保存和恢复变量
 
 TensorFlow 变量提供了表示程序所操作的共享、持续状态的最佳方式。（更多信息请查阅 @{$variables$Variables}。)
-该节阐述了如何保存和恢复变量。需注意 Estimator 会自动保存和恢复变量（在 `model_dir` 中）。
+该节阐述了如何保存和恢复变量。需注意 Estimators 会自动保存和恢复变量（在 `model_dir` 中）。
 
 `tf.train.Saver` 类提供了保存和恢复模型的方法。
-`tf.train.Saver` 构造器为图形中所有或指定列表的变量添加 `save` 和 `restore` 操作（op, operation）。 该 `Saver` 对象提供了运行这些 op 的方法，并指定了检查点文件写入和读取的路径。
+`tf.train.Saver` 构造器为计算图中所有或指定列表的变量添加 `save` 和 `restore` 操作（op, operation）。 该 `Saver` 对象提供了运行这些操作的方法，并指定了快照文件写入和读取的路径。
 
-保存程序可以恢复模型中已定义的所有变量。如果您在不知道如何构建图形的情况下载入了一个模型（例如，您正编写一个载入模型的通用程序），那么请查阅本文后续章节[保存和恢复模型概述](#models)。
+保存程序可以恢复模型中已定义的所有变量。如果您在不知道如何构建计算图的情况下载入了一个模型（例如，您正编写一个载入模型的通用程序），那么请查阅本文后续章节[保存和恢复模型概述](#models)。
 
-TensorFlow 在二进制**检查点文件**中保存变量，粗略地讲，将变量名映射到张量值。 
+TensorFlow 在二进制**快照文件**中保存变量，粗略地讲，就是将变量名映射到张量值。 
 
 
 ### 保存变量
 
-创建一个包含 `tf.train.Saver()` 类的 `Saver` 来管理模型中的所有变量。例如，如下代码演示了如何调用 `tf.train.Saver.save` 方法将变量保存到检查点文件中：
+用 `tf.train.Saver()` 方法创建一个 `Saver` 来管理模型中的所有变量。例如，如下代码演示了如何调用 `tf.train.Saver.save` 方法将变量保存到快照文件中：
 
 ```python
 # Create some variables.
@@ -51,7 +51,7 @@ with tf.Session() as sess:
 
 ### 恢复变量
 
-`tf.train.Saver` 对象不仅可以将变量保存到检查点文件中，还可以恢复变量。需注意，从文件中恢复变量时，无需预先初始化变量。例如，如下代码演示了如何调用 `tf.train.Saver.restore` 方法从检查点文件中恢复变量:
+`tf.train.Saver` 对象不仅可以将变量保存到快照文件中，还可以恢复变量。需注意，从文件中恢复变量时，无需预先初始化变量。例如，如下代码演示了如何调用 `tf.train.Saver.restore` 方法从检查点文件中恢复变量:
 
 ```python
 tf.reset_default_graph()
@@ -77,16 +77,16 @@ with tf.Session() as sess:
 
 ### 选择需要保存和恢复的变量
 
-如果您没有传递任何参数给 `tf.train.Saver()`，保存程序将掌控图形中的所有变量。每个变量都被保存在变量创建时被传递到的那个名称下。
+如果您没有传递任何参数给 `tf.train.Saver()`，保存程序将默认对计算图中所有的变量进行保存或恢复操作。每个变量都会以原变量名保存。
 
-为检查点文件中的变量明确指定名称有时是很有用的。例如，您训练了一个模型，包含一个名称为 `"weights"` 的变量，将 `"weights"` 变量的值恢复到名为 `"params"` 的变量中。
+为快照文件中的变量明确指定名称有时是很有用的。例如，在您训练的模型中包含一个名为 `"weights"` 的变量，而你想要把 `"weights"` 变量的值恢复到名为 `"params"` 的变量中。
 
-仅保存或恢复模型所使用变量的一个子集有时也是非常有用的。例如，您已经训练一个五层的神经网络，现在想要训练一个六层模型，复用已经训练好的五层的现有权重。那么您就可以使用保存程序恢复前五层的权重了。
+有时仅对部分变量进行保存和恢复操作也很有用。例如，您有一个已经训练好的五层的神经网络模型，现在想复用其权重值来训练一个六层的神经网络。那么您可以使用保存程序仅恢复前五层的权重。
 
-通过传递如下之一的参数给 `tf.train.Saver()` 构造器，您可以轻易的指定保存和下载的名称和变量：
+通过传递如下之一的参数给 `tf.train.Saver()` 构造器，您可以轻易的指定保存和加载的名称和变量：
 
-* 变量列表（将被保存在自己的名称下）。
-* 一个 Python 库，其中键是要使用的名称，值是要管理的变量。
+* 变量列表（将会以原变量名保存）。
+* 一个 Python 字典，键是要使用的名称，值是要管理的变量。
 
 继续之前展示的保存/恢复示例：
 
@@ -111,21 +111,21 @@ with tf.Session() as sess:
 
 注意：
 
-*  如果您需要储存模型变量的不同子集，可以根据需要创建足够多的 `Saver` 对象。同一变量可以在多个 `saver` 对象中列出；只有在 `Saver.restore()` 方法运行时它的值才会改变。
+*  你可以随心所欲地创建多个 `Saver` 对象来保存变量的不同部分。同一变量可以在多个 `saver` 对象中列出；只有在 `Saver.restore()` 方法运行时它的值才会改变。
 
-*  如果您仅在会话开始时恢复模型变量的一个子集，那么您必须为其他变量运行一个初始化 op。更多信息请查阅 @{tf.variables_initializer}。
+*  如果您仅在会话开始时恢复部分模型变量，那么您必须为其他变量运行一个初始化操作。更多信息请查阅 @{tf.variables_initializer}。
 
 *  您可以使用
    [`inspect_checkpoint`](https://www.tensorflow.org/code/tensorflow/python/tools/inspect_checkpoint.py)
-   库检查检查点文件中的变量，尤其是 `print_tensors_in_checkpoint_file` 函数。
+   库检查快照文件中的变量， `print_tensors_in_checkpoint_file` 函数尤为好用。
 
-*  默认情况下，`Saver` 使用每个变量的 @{tf.Variable.name} 属性值。但是，创建 `Saver` 对象时，您可以为检查点文件中的变量随意选择名称。
+*  默认情况下，`Saver` 使用每个变量的 @{tf.Variable.name} 来保存变量。但是，你也可以在创建 `Saver` 对象时为快照文件中的每个变量指定名字。
 
 
-### 检查检查点文件中的变量
+### 检查快照文件中的变量
 
 使用
-[`inspect_checkpoint`](https://www.tensorflow.org/code/tensorflow/python/tools/inspect_checkpoint.py) 库可以迅速检查检查点文件中的变量.
+[`inspect_checkpoint`](https://www.tensorflow.org/code/tensorflow/python/tools/inspect_checkpoint.py) 库可以迅速检查快照文件中的变量.
 
 继续之前展示的保存/恢复示例：
 
@@ -158,26 +158,26 @@ chkp.print_tensors_in_checkpoint_file("/tmp/model.ckpt", tensor_name='v2', all_t
 <a name="models"></a>
 ## 保存和恢复模型概览
 
-当您想要保存和加载变量、图形和图形元数据时--基本上，当您想要保存和恢复模型时--推荐您使用 SavedModel。
-**SavedModel**  是一种语言中立的，可恢复的，封闭的序列化格式。SavedModel 使更高级别的系统和工具能够生成、消耗和转换 TensorFlow 模型。TensorFlow 提供了几种与 SavedModel 交互的途径，包括 tf.saved_model API, Estimator API 以及 CLI。
+当您想要保存和加载变量、计算图和计算图元数据时--也就是说，当您想要保存和恢复模型时--推荐您使用 SavedModel。
+**SavedModel**  是一种独立于语言的，可恢复的，封闭的序列化格式。SavedModel 使更高级别的系统和工具能够生成、使用和转换 TensorFlow 模型。TensorFlow 提供了几种与 SavedModel 交互的途径，包括 tf.saved_model API, Estimator API 以及 CLI。
 
 
 ## 用于创建和加载 SavedModel 的 API
 
-本节主要介绍用于创建和加载 SavedModel 的 API，特别是使用低级 TensorFlow API 时。
+本节主要介绍用于创建和加载 SavedModel 的 API， 尤其是在低级 TensorFlow API 中的应用。
 
 
 ### 创建 SavedModel
 
 我们提供了 SavedModel 的一个 Python 实现
 @{tf.saved_model.builder$builder}。
-`SavedModelBuilder` 类提供了保存多个 `MetaGraphDef` 的功能。 **MetaGraph** 是一个数据流图，加上与之相关的变量、资产和签名。**MetaGraphDef** 是 **MetaGraph** 的协议缓冲区表示。签名是图形输入和输出的集合。
+`SavedModelBuilder` 类提供了保存多个 `MetaGraphDef` 的功能。 **MetaGraph** 是一个数据流图，和与其相关的变量、资源和签名。**MetaGraphDef** 是 **MetaGraph** 的 Protocol Buffer 形式。**签名**( Signature )是计算图输入和输出的集合。
 
-如果需要将资产保存、写入或拷贝到磁盘，那么可以在添加第一个 `MetaGraphDef` 时提供这些资源。如果多个 `MetaGraphDef` 与同名资产相关联，则仅保留第一个版本。
+如果需要将资源保存、写入或拷贝到磁盘，那么可以在添加第一个 `MetaGraphDef` 时提供这些资源。如果多个 `MetaGraphDef` 与同名资源相关联，则仅保留第一个版本。
 
-添加到 SavedModel 的 `MetaGraphDef` 必须使用用户指定的标签进行注释。标签提供了一种方法来表示要加载和恢复的特殊 `MetaGraphDef`，以及共享的变量和资产集。这些标签通常用 `MetaGraphDef` 的功能（如服务或训练）来进行注释，选择性的用硬件特性（如 GPU）来注释。
+添加到 SavedModel 的 `MetaGraphDef` 必须由用户指定注解的标签。标签提供了一种方法来表示要加载和恢复的特殊 `MetaGraphDef`，以及共享的变量和资源集。通常，这些标签会给 `MetaGraphDef` 添加功能性的注解（比如保存或者训练），也可以指定硬件（如 GPU）来进行注释。
 
-例如，如下代码推荐了一种使用 `SavedModelBuilder` 创建 SavedModel 的典型方法:
+例如，如下代码展示了一种使用 `SavedModelBuilder` 创建 SavedModel 的典型方法:
 
 ```python
 export_dir = ...
@@ -199,17 +199,17 @@ builder.save()
 ```
 
 
-### 在 Python 加载 SavedModel
+### 在 Python 中加载 SavedModel
 
 Python 版本的 SavedModel
 @{tf.saved_model.loader$loader}
-为SavedModel提供了加载和恢复的能力。`load` 操作需要如下信息：
+为 SavedModel 提供了加载和恢复的能力。`load` 操作需要如下信息：
 
-* 恢复图形定义和变量的会话。
-* 标签用于标识需要加载的 MetaGraphDe。
+* 恢复计算图定义和变量的会话。
+* 用于标识加载的 MetaGraphDe 的标签。
 * SavedModel 的位置（目录）。
 
-加载时，作为指定 MetaGraphDef 的一部分提供的变量、资产和签名的子集将被恢复到提供的会话中。
+加载时， 指定的 MetaGraphDef 中的部分变量、资源和签名将会被恢复到目标会话中。
 
 
 ```python
@@ -225,9 +225,9 @@ with tf.Session(graph=tf.Graph()) as sess:
 
 C++ 版本的 SavedModel
 [加载器](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/cc/saved_model/loader.h)
-提供了一个从路径加载 SavedModel 的API, 同时允许
-`SessionOptions` 和 `RunOptions`。
-您必须列举出与被加载图形相关的标签。加载的 SavedModel 版本称为 `SavedModelBundle`, 包含 MetaGraphDef 和加载的会话。
+提供了一个从路径加载 SavedModel 的API, 同时允许指定
+`SessionOptions` 和 `RunOptions` 参数。
+您必须指定出与被加载计算图相关的标签。SavedModel 会作为 `SavedModelBundle`加载，其中包含了 MetaGraphDef 和当前会话。
 
 ```c++
 const string export_dir = ...
@@ -240,7 +240,7 @@ LoadSavedModel(session_options, run_options, export_dir, {kSavedModelTagTrain},
 
 ### 标准常量
 
-SaveModel 提供了为多种使用案例创建和加载 TensorFlow 图形的灵活性。对于最为常见的使用案例，SavedModel 的 API 提供了一组 Python 和 C++ 中的常量，易于重复使用和一致的跨工具共享。
+SaveModel 为多种使用案例提供了创建和加载 TensorFlow 计算图的灵活性。对于最为常见的使用案例，SavedModel 的 API 提供了一组 Python 和 C++ 中的常量，易于重复使用和一致的跨工具共享。
 
 #### 标准 MetaGraphDef 标签
 
@@ -253,36 +253,36 @@ SaveModel 提供了为多种使用案例创建和加载 TensorFlow 图形的灵�
 #### 标准 SignatureDef 常量
 
 [**SignatureDef**](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/core/protobuf/meta_graph.proto)
-是一个协议缓冲器，用于定义由图形提供的计算的签名。常用输入键、输出键以及方法名称在：
+是一个 Protocol Buffer，定义了计算图支持的计算中的签名。常用输入键、输出键以及方法名称在：
 
 * [Python](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/python/saved_model/signature_constants.py)
 * [C++](https://github.com/tensorflow/tensorflow/blob/master/tensorflow/cc/saved_model/signature_constants.h)
 
-## 使用 SavedModel 和 Estimator
+## 配合 Estimators 使用 SavedModel
 
-训练好 `Estimator` 模型之后，您可能想要从这个模型创建一个执行请求并返回结果的服务。您可以在您的设备上本地运行该服务，或者在云上进行分级部署。
+训练好 `Estimator` 模型之后，您可能想要从这个模型创建一个执行请求并返回结果的服务。您可以在您的设备上本地运行该服务，或者在云上动态部署。
 
 要为服务准备一个训练好的 Estimator，您必须以标准的 SavedModel 格式输出它。本节介绍了如何：
 
 * 指定能够提供的输出节点以及相应的
   [APIs](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/apis/prediction_service.proto)
  （分类，回归或预测）。
-* 将模型输出为 SavedModel 格式。
-* 从本地服务器提供模型并请求预测。
+* 以 SavedModel 格式输出模型。
+* 在本地服务器上运行模型并做出预测。
 
 
-### 准备服务输入
+### 准备运行时的输入
 
-训练时，@{$input_fn$`input_fn()`} 获取数据并准备供模型使用。在服务时间，类似的，`serving_input_receiver_fn()` 接收推理请求并准备提供给模型。此功能有如下目的：
+训练时，@{$input_fn$`input_fn()`} 获取并准备数据供模型使用。 在运行时，类似的，`serving_input_receiver_fn()` 接收推理请求并准备提供给模型。这一步旨在实现：
 
-*  在图形中添加占位符，服务系统将用结果请求填充。
-*  添加任意额外需要的 op，用于将数据从输入格式转换为模型期望的功能 `Tensor`。
+*  为系统运行时的推理请求添加占位符。
+*  添加任意额外需要的操作，用于将输入数据转换成模型所需要的特征 `Tensor`。
 
-该功能返回一个 @{tf.estimator.export.ServingInputReceiver} 对象，该对象将占位符和产生的功能 `Tensor` 封装到一起。
+该该函数返回一个 @{tf.estimator.export.ServingInputReceiver} 对象，该对象将占位符和生成的特征 `Tensor` 封装到一起。
 
-典型的模式是推理请求以序列化 `tf.Example` 的形式到达, 因此 `serving_input_receiver_fn ()` 创建一个字符串占位符来接收它们。  `serving_input_receiver_fn ()` 之后也负责解析 `tf.Example`，通过在图形中添加 @{tf.parse_example} op。
+典型的模式是推理请求以序列化 `tf.Example` 的形式到达, 因此 `serving_input_receiver_fn ()` 创建一个字符串占位符来接收它们。  `serving_input_receiver_fn ()` 之后也负责解析 `tf.Example`，通过在计算图中添加 @{tf.parse_example} op。
 
-编写这样的 `serving_input_receiver_fn ()` 时, 您必须传递一个解析说明给 @{tf.parse_example}, 以便告知分析器期望的功能名称以及如何将它们映射到 `Tensor`。解析说明采用 dict 从功能名称到 @{tf.FixedLenFeature}, @{tf.VarLenFeature} 和 @{tf.SparseFeature} 的形式。注意，该解析说明不应包含任何标签或权重列, 因为这些在服务时间不可用&mdash;对比训练时在 `input_fn()` 中使用解析说明。
+编写这样的 `serving_input_receiver_fn ()` 时, 您必须传递一个解析说明给 @{tf.parse_example}, 以便告知分析器期望的功能名称以及如何将它们映射到 `Tensor`。解析说明是一个从功能名称映射到 @{tf.FixedLenFeature}, @{tf.VarLenFeature} 和 @{tf.SparseFeature} 的字典。注意，该解析说明不应包含任何标签或权重列, 因为这些在运行时不可用&mdash;这跟在训练时使用 `input_fn()` 的解析说明正好相反。
 
 结合起来，然后：
 
@@ -304,11 +304,11 @@ def serving_input_receiver_fn():
 
 > 注意：当在本地服务器上使用预测 API 训练模型时, 不需要解析步骤, 因为模型将接收原始特征数据。
 
-即使您不需要解析或其他输入处理 — 也就是说, 如果服务系统直接给出特征 `Tensor`, 您仍然必须提供一个 `serving_input_receiver_fn ()`, 为特征张量创建占位符并传递它们。@{tf.estimator.export.build_raw_serving_input_receiver_fn} 实用程序提供了此功能。
+即使您不需要解析或其他输入处理 — 也就是说, 如果服务系统直接给出特征 `Tensor`, 您仍然必须提供一个 `serving_input_receiver_fn ()`, 先为特征 `Tensor` 创建占位符，然后再传入张量。@{tf.estimator.export.build_raw_serving_input_receiver_fn} 工具提供了此功能。
 
-如果这些程序还不能满足您的需求，您可以编写自己的 `serving_input_receiver_fn()`。一种可能需要的情况是，您训练的 `input_fn()` 包含了一些必须在服务时间总结的预处理逻辑。为了降低训练-服务倾斜的风险，建议用一个函数封装这些处理，然后从 `input_fn()` 和 `serving_input_receiver_fn()` 中调用该函数。
+如果这些程序还不能满足您的需求，您可以编写自己的 `serving_input_receiver_fn()`。 一种应用场景是，您训练的 `input_fn()` 包含了一些必须在运行时执行的预处理逻辑。为了降低训练向生产状态倾斜的风险，建议将这些预处理的内容封装在 `input_fn()` 和 `serving_input_reveiver_fn()` 的函数中。
 
-注意，`serving_input_receiver_fn()` 还确定了签名的*输入*部分。也就是说，在编写 `aserving_input_receiver_fn()` 时，您必须告诉解析器所期望的签名以及如何将它们映射到模型的预期输入。相比之下, 签名的*输出*部分由模型确定。
+注意，`serving_input_receiver_fn()` 还确定了签名的*输入*部分。也就是说，在编写 `aserving_input_receiver_fn()` 时，您必须告诉解析器所期望的签名以及如何将它们映射到模型的预期输入。相反, 签名的*输出*部分由模型确定。
 
 
 ### 执行输出
@@ -320,14 +320,14 @@ def serving_input_receiver_fn():
 estimator.export_savedmodel(export_dir_base, serving_input_receiver_fn)
 ```
 
-这种方法在第一次调用 `serving_input_receiver_fn()` 时创建一个新的图形，以获取功能 `Tensor`，然后调用 `Estimator` 的 `model_fn()` 去生成基于这些功能的模型图。它开始了一个新的会话，且在默认情况下恢复最近的检查点文件到里面。（如果需要，可以传递不同的检查点文件。）最后，它会在给定的`export_dir_base` (即 `export_dir_base/<timestamp>`)下创建一个有时间戳的输出目录，并将一个 SavedModel 写入其中, 其中包含从该会话保存的单个 `MetaGraphDef`。
+这种方法在第一次调用 `serving_input_receiver_fn()` 时创建一个新的计算图，以获取特征 `Tensor`，然后调用 `Estimator` 的 `model_fn()` 去生成基于这些特征的模型图。它创建了一个新的会话，并将最近的快照文件恢复到会话里。（如果需要，可以传递不同的快照文件。）最后，它会在给定的`export_dir_base` (即 `export_dir_base/<timestamp>`)下创建一个有时间戳的输出目录，并将一个包含了会话中的 `MetaGraphDef` 的 SavedModel 写入其中。
 
 > 注意：请及时清理旧的输出文件。
 > 否则，持续输出的文件将堆积在 `export_dir_base` 目录下。
 
 ### 指定自定义模型的输出
 
-编写一个自定义 `model_fn` 时，必须填充 @{tf.estimator.EstimatorSpec} 返回值的 `export_outputs` 元素。这是 `{name: output}` 描述在服务期间导出和使用的输出签名的 dict。
+编写一个自定义 `model_fn` 时，必须指定 @{tf.estimator.EstimatorSpec} 的返回值 `export_outputs`。这是一个 `{name: output}` 形式的数据字典，用来描述运行期间使用和导出的签名。
 
 在通常情况下作出一个单一的预测, 这个 dict 包含一个元素, `name` 无关紧要。在多头部模型中, 每个头部由这个 dict 中的一个条目表示。在这种情况下, `name` 是您选择的字符串, 可用于在服务时间请求特定的头部。
 
