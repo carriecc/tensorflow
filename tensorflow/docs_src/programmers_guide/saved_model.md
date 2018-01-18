@@ -329,25 +329,24 @@ estimator.export_savedmodel(export_dir_base, serving_input_receiver_fn)
 
 编写一个自定义 `model_fn` 时，必须指定 @{tf.estimator.EstimatorSpec} 的返回值 `export_outputs`。这是一个 `{name: output}` 形式的数据字典，用来描述运行期间使用和导出的签名。
 
-在通常情况下作出一个单一的预测, 这个 dict 包含一个元素, `name` 无关紧要。在多头部模型中, 每个头部由这个 dict 中的一个条目表示。在这种情况下, `name` 是您选择的字符串, 可用于在服务时间请求特定的头部。
-
+通常在预测单个值的时候，作为结果的数据字典仅包含一个元素，这时候`name` 就变得无关紧要。在多头部模型中, 每个头部由这个字典中的一个条目表示。在这种情况下, `name` 可以由你自行选择，并用于在运行时请求某个特定的头部。
 每一个 `output` 值都必须是一个 `ExportOutput` 对象，如
 @{tf.estimator.export.ClassificationOutput},
 @{tf.estimator.export.RegressionOutput}, 或者
 @{tf.estimator.export.PredictOutput}。
 
 这些输出类型直接映射到
-[TensorFlow 服务 API](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/apis/prediction_service.proto), 因此确定哪些请求类型将被授予。
+[TensorFlow 服务 API](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/apis/prediction_service.proto), 以此来决定要执行哪个请求。
 
-注意: 在多头部情况下, 将为从 model_fn 返回的 `export_outputs` dict 中的每个元素生成一个 `SignatureDef`, 使用相同的键命名。这些 `SignatureDef` 仅在其输出中有所不同, 因为由相应的 `ExportOutput` 条目所提供。输入总是由 `serving_input_receiver_fn` 提供。推理请求可以按名称指定头部。头部必须使用  [`signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY`](https://www.tensorflow.org/code/tensorflow/python/saved_model/signature_constants.py) 命名，在推理请求未指定一个 `SignatureDef` 时指出将提供服务的 SignatureDef。
+注意: 在多头部情况下, 从 model_fn 中返回的 `export_outputs` 字典中的每一个元素都会生成一个相同键名的 `SignatureDef`。这些 `SignatureDef` 仅在其输出中有所不同, 因为由相应的 `ExportOutput` 条目所生成。输入总是由 `serving_input_receiver_fn` 提供。推理请求可以按名称指定头部。头部必须使用  [`signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY`](https://www.tensorflow.org/code/tensorflow/python/saved_model/signature_constants.py) 命名，在推理请求没有指定头部时来隐式地判断哪一个  `SignatureDef` 将会被执行。
 
 
-### 在本地为输出的模型提供服务
+### 在本地运行导出的模型
 
 对于本地部署，您可以使用
-[TensorFlow 服务](http://github.com/tensorflow/serving)（一个加载 SavedModel 并将其公开为 [gRPC](http://www.grpc.io/) 服务的开源项目）来为模型提供服务。
+[TensorFlow Serving](http://github.com/tensorflow/serving)（一个加载 SavedModel 并将其暴露为 [gRPC](http://www.grpc.io/) 服务的开源项目）来运行模型。
 
-首先， [安装TensorFlow 服务](http://github.com/tensorflow/serving)。
+首先， [安装 TensorFlow Serving](http://github.com/tensorflow/serving)。
 
 然后创建并运行本地模型服务器，用以上导出的 SavedModel 路径替换 `$export_dir_base`：
 
@@ -356,16 +355,16 @@ bazel build //tensorflow_serving/model_servers:tensorflow_model_server
 bazel-bin/tensorflow_serving/model_servers/tensorflow_model_server --port=9000 --model_base_path=$export_dir_base
 ```
 
-现在您就有了一台服务器，通过 gRPC 端口 9000 来监听推理请求!
+现在您就有了一台服务器，通过 gRPC 在端口 9000 来监听推理请求!
 
 
 ### 从本地服务器请求预测
 
 服务器根据
 [PredictionService](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/apis/prediction_service.proto#L15)
-gRPC API 服务定义来响应 gRPC 请求（嵌套协议缓冲区在不同的[相邻文件](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/apis)中定义）。
+gRPC API 服务定义来响应 gRPC 请求（ 嵌套的 Protocol Buffer 定义在不同的[neighboring files](https://github.com/tensorflow/serving/blob/master/tensorflow_serving/apis)中）。
 
-从 API 服务定义，Fprc 框架生成各种语言的客户端库，提供对API的远程访问。在使用 Bzael 创建协议的项目中，这些库都是自动创建并通过如下依赖关系（以使用Python 为例）提供的：
+根据 API 服务的定义，gRPC 框架能够生成多种语言的客户端类库，提供对 API 的远程访问。在使用 Bzael 构建工具的项目中，这些库都是自动创建并通过如下依赖关系（以使用 Python 为例）提供的：
 
 ```build
   deps = [
@@ -376,7 +375,7 @@ gRPC API 服务定义来响应 gRPC 请求（嵌套协议缓冲区在不同的[�
   ]
 ```
 
-然后 Python 客户端代码可以导入到库中：
+Python 客户端的代码中引入类库的方式如下：
 
 ```py
 from tensorflow_serving.apis import classification_pb2
@@ -385,10 +384,9 @@ from tensorflow_serving.apis import predict_pb2
 from tensorflow_serving.apis import prediction_service_pb2
 ```
 
-> 注意：`prediction_service_pb2` 将服务定义为一个整体, 因此始终是必需的。但是，根据所做请求的类型，典型的客户端只需要 `classification_pb2`、`regression_pb2` 和 `predict_pb2` 中的一个。
+> 注意：`prediction_service_pb2` 将服务定义为一个整体, 因此始终需要引入它。但是，根据所做请求的类型，典型的客户端只需要引入  `classification_pb2`、`regression_pb2` 和 `predict_pb2` 中的一个。
 
-然后, 通过组装包含请求数据的协议缓冲区并将其传递给服务存根, 来完成 gRPC 请求的发送。请注意, 请求协议缓冲区是如何创建为空的, 然后通过
-[生成的协议缓冲区 API](https://developers.google.com/protocol-buffers/docs/reference/python-generated) 进行填充。
+然后, 将请求数据组装成 Protocol Buffer 格式，并传递给服务端，至此一个 gRPC 请求完成。请注意, 请注意 Protocol Buffer 的生成方式，先创建一个空的 Protocol Buffer 然后再通过[生成的协议缓冲区 API](https://developers.google.com/protocol-buffers/docs/reference/python-generated) 进行赋值。
 
 ```py
 from grpc.beta import implementations
@@ -403,12 +401,12 @@ example.features.feature['x'].float_list.value.extend(image[0].astype(float))
 result = stub.Classify(request, 10.0)  # 10 secs timeout
 ```
 
-本例中返回的结果是一个 `ClassificationResponse` 协议缓冲区。
+本例中返回的结果是一个 Protocol Buffer 格式的 `ClassificationResponse`。
 
-这个一个框架的例子；更多信息请查阅 @{$deploy$Tensorflow Serving}
+这个言简意赅的例子；更多信息请查阅 @{$deploy$Tensorflow Serving}
 文档和[示例](https://github.com/tensorflow/serving/tree/master/tensorflow_serving/example)。
 
-> 注意：`ClassificationRequest` 和 `RegressionRequest` 包含一个 `tensorflow.serving.Input` 协议缓冲区，继而包含了一个 `tensorflow.Example` 协议缓冲区列表。相比之下, `PredictRequest` 包含从功能名称到通过 `TensorProto` 编码的值的映射。相应地: 当使用 `Classify` 和 `Regress` API 时, TensorFlow 服务提供序列化 `tf.Examples` 到图形中, 所以 `serving_input_receiver_fn ()` 应该包括一个 `tf. parse_example ()` Op。但是, 当使用通用 `Predict` API 时, TensorFlow 服务将原始特征数据提供到图中, 因此需要使用 `serving_input_receiver_fn ()` 进行传递。
+> 注意：`ClassificationRequest` 和 `RegressionRequest` 包含一个 `tensorflow.serving.Input` Protocol Buffer，，其中包含了一个 `tensorflow.Example` 的 Protocol Buffer 列表。不同的是， `PredictRequest` 包含了一个从特征名到特征值的映射关系，其中特征值是通过 `TensorProto` 编码的。相同的是，当调用 `Classify` 和 `Regress` API 的时候， TensorFlow 运行时会将序列化的 `tf.Examples` 输入计算图，因此 `serving_input_receiver_fn ()` 应当包含一个 `tf. parse_example ()` 操作。当调用普通的 `Predict` API 时，TensorFlow 在运行中会将原始的特征数据输入计算图，因此应当通过 `serving_input_receiver_fn ()` 进行传递。
 
 
 <!-- TODO(soergel): give examples of making requests against this server, using
@@ -423,7 +421,7 @@ from contrib to core. -->
 ## 使用 CLI 检查和执行 SavedModel
 
 您可以使用 SavedModel 命令行接口（CLI）来检查和执行 SavedModel。例如，使用 CLI 检查模型的 `SignatureDef`。CLI 可以让您迅速确认输入
-@{$tensors$Tensor dtype and shape} 和模型匹配。此外，如果您想要测试模型，可以使用 CLI， 通过传入各种格式(例如, Python 表达式) 的示例输入, 然后获取输出来进行完整性检查。
+的@{$tensors$张量类型和形状}和模型相匹配。此外，如果您想要测试模型的连通性，可以使用 CLI， 通过传入各种格式(例如, Python 表达式) 的样本输入, 然后获取输出来验证。
 
 
 ### 安装 SavedModel CLI
@@ -443,7 +441,7 @@ $ bazel build tensorflow/python/tools:saved_model_cli
 
 ### 命令概览
 
-SavedModel CLI 支持如下两个在 SavedModel 中 `MetaGraphDef` 上的命令:
+SavedModel CLI 支持如下两个命令来操作 SavedModel 中的 `MetaGraphDef`:
 
 * `show`，展示 SavedModel 中 `MetaGraphDef` 上的计算。
 * `run`，运行 `MetaGraphDef` 上的计算。
@@ -451,7 +449,7 @@ SavedModel CLI 支持如下两个在 SavedModel 中 `MetaGraphDef` 上的命令:
 
 ### `show` 命令
 
-一个 SavedModel 包含一个或多个 `MetaGraphDef`，通过标签集区分。服务模型时，您可能想要知道每个模型中 `SignatureDef` 的类型以及它们的输入输出是什么。`show` 命令允许您按分层顺序检查 SavedModel 的内容。语法如下：
+一个 SavedModel 包含一个或多个 `MetaGraphDef`，通过标签集区分。要运行一个模型，您可能想要知道每个模型中 `SignatureDef` 的类型以及它们的输入输出是什么。`show` 命令允许您按分层检查 SavedModel 的内容。语法如下：
 
 ```
 usage: saved_model_cli show [-h] --dir DIR [--all]
@@ -481,13 +479,13 @@ SignatureDef key: "regress_x_to_y2"
 SignatureDef key: "serving_default"
 ```
 
-如果一个 `MetaGraphDef` 在标签集中包含了*多个*标签，那么您必须标识所有标签，每个标签需要用逗号隔开，如：
+如果一个 `MetaGraphDef` 在标签集中包含了**多个**标签，那么您必须标识所有标签，每个标签需要用逗号隔开，如：
 
 ```none
 $ saved_model_cli show --dir /tmp/saved_model_dir --tag_set serve,gpu
 ```
 
-若要显示特定 `SignatureDef` 的所有输入和输出 TensorInfo，需将 `SignatureDef` 密钥传递给 `signature_def` 选项。当您想知道稍后用于执行计算图的输入张量的张量键值、 dtype 和形状时, 这是非常有用的。例如:
+若要显示特定 `SignatureDef` 的所有输入和输出的张量信息，需将 `SignatureDef` 键名传递给 `signature_def` 选项。这对你了解计算图执行时输入张量的键值、类型和形状非常有帮助。例如:
 
 ```
 $ saved_model_cli show --dir \
@@ -543,7 +541,7 @@ Method name is: tensorflow/serving/predict
 
 ### `run` 命令
 
-调用 `run` 命令来运行图形计算，传递输入值，然后显示（选择性保存）输出。语法如下:
+调用 `run` 命令来运行计算图计算，传递输入值，然后显示（可选保存）输出。语法如下:
 
 ```
 usage: saved_model_cli run [-h] --dir DIR --tag_set TAG_SET --signature_def
@@ -552,7 +550,7 @@ usage: saved_model_cli run [-h] --dir DIR --tag_set TAG_SET --signature_def
                            [--overwrite] [--tf_debug]
 ```
 
-`run` 命令提供了如下两种方式将输入传递到模型中：
+`run` 命令提供了如下两种方式将输入数据传递到模型：
 
 * `--inputs` 选项允许您在文件中传递 numpy ndarray。
 * `--input_exprs` 选项允许您传递 Python 表达式。
@@ -560,7 +558,7 @@ usage: saved_model_cli run [-h] --dir DIR --tag_set TAG_SET --signature_def
 
 #### `--inputs`
 
-要在文件中传递输入数据，需指定 `--inputs` 选项，它采用如下常规格式：
+要在文件中传递输入数据，需指定 `--inputs` 选项，它通常用如下格式：
 
 ```bsh
 --inputs <INPUTS>
@@ -571,24 +569,24 @@ usage: saved_model_cli run [-h] --dir DIR --tag_set TAG_SET --signature_def
 *  `<input_key>=<filename>`
 *  `<input_key>=<filename>[<variable_name>]`
 
-你可以传递多个 *INPUTS*。如果您确实传递了多个输入，请使用分号分隔每个 *INPUTS*。
+你可以传递多个 **INPUT**。如果您确实传递了多个输入，请使用分号分隔每个 *INPUTS*。
 
-`saved_model_cli` 使用 `numpy.load` 加载*文件名*。*文件名*可能是以下任一格式：
+`saved_model_cli` 使用 `numpy.load` 加载**文件名**。**文件名**可能是以下任一格式：
 
 *  `.npy`
 *  `.npz`
 *  pickle 格式
 
-`.npy` 文件总是包含一个 numpy ndarray。因此，从 `.npy` 文件加载时，内容将被直接分配到特定的输入张量。如果您指定了包含此 `.npy` 文件的 *variable_name*，*variable_name* 将被忽略，且会发出警告。
+`.npy` 文件总是包含一个 numpy ndarray。因此，从 `.npy` 文件加载内容时，文件内容将被直接赋值给指定的输入张量。如果您指定了包含此 `.npy` 文件的 **variable_name**，**variable_name** 将被忽略，且会发出警告。
 
-从 `.npz` (zip) 文件加载时，您可以选择性的指定一个 *variable_name* 来标识 zip 文件中的变量，以此为输入张量键加载内容。如果不指定 *variable_name*，SavedModel CLI 将会检查 zip 文件中是否只包含一个文件，并为指定的输入张量键加载它。
+从 `.npz` (zip) 文件加载时，您可以选择性的指定一个 **variable_name** 来标识 zip 文件中的变量，以此作为输入张量的值。如果不指定 **variable_name**，SavedModel CLI 将会检查 zip 文件中是否只包含一个文件，并将其赋值给指定的张量。
 
-从 pickle 文件加载时，如果方括号内没有指定 `variable_name`，则无论 pickle 文件中内容是什么，都将被传送到指定的输入张量键中。否则，SavedModel CLI 将假定一个库存储在 pickle 文件中, 并且将使用与对应 *variable_name* 的值。
+从 pickle 文件加载内容时，如果方括号内没有指定 `variable_name`，则无论 pickle 文件中内容是什么，都将被赋值给指定的张量。否则，SavedModel CLI 将假定 pickle 中保存了一个数据字典, 并且将使用与对应 **variable_name** 的值。
 
 
 #### `--inputs_exprs`
 
-若通过 Python 表达式传递输入, 请指定 `--input_exprs` 选项。这在没有数据文件时会很有用，但仍然希望使用与模型 `SignatureDef` 的dtype和形状相匹配的简单输入来全面检查模型。例如：
+若通过 Python 表达式传递输入, 请指定 `--input_exprs` 选项。这在你没有任何数据文件但仍想通过一些符合 `SignatureDef` 类型、形状定义的输入数据来检查模型的连通性时会很有用。例如：
 
 ```bsh
 `input_key=[[1], [2], [3]]`
@@ -600,19 +598,19 @@ usage: saved_model_cli run [-h] --dir DIR --tag_set TAG_SET --signature_def
 input_key=np.ones((32, 32, 3))
 ```
 
-(请注意，`numpy` 模块已经可以作为 `np`。)
+(请注意，`numpy` 模块已经可以作为 `np` 使用。)
 
 
 #### 保存输出
 
-默认情况下，SavedModel CLI 将输出写入 stdout。如果将目录传递给 `--outdir` 选项，输出将被保存为给定目录下输出张量键后命名的 npy 文件。
+默认情况下，SavedModel CLI 将输出写入 stdout。如果传了一个目录给 `--outdir` 选项，输出内容将会以输出张量的键名保存在指定目录的 npy 文件中。
 
 使用 `--overwrite` 覆盖现有输出文件。
 
 
 #### TensorFlow 调试器 (tfdbg) 集成
 
-如果设置了 `--tf_debug` 选项, 则 SavedModel CLI 将使用 TensorFlow 调试器 (tfdbg) 在运行 SavedModel 时观察中间张量、运行时间关系图或子图。
+如果设置了 `--tf_debug` 选项, 则 SavedModel CLI 将使用 TensorFlow 调试器 (tfdbg) 在运行 SavedModel 时监视过渡张量、运行的计算图或子图。
 
 
 #### `run` 的完整示例
@@ -622,11 +620,11 @@ input_key=np.ones((32, 32, 3))
 *  模型只是 `x1` 和 `x2` 相加获得输出 `y`。
 *  模型中所有张量具有形状 `(-1, 1)`。
 *  您有两个 `npy` 文件：
-   *  `/tmp/my_data1.npy`, 包含一个 `[[1], [2], [3]]`.
+   *  `/tmp/my_data1.npy`, 包含一个 numpy ndarray `[[1], [2], [3]]`.
    *  `/tmp/my_data2.npy`, 包含另一个 numpy
       ndarray `[[0.5], [0.5], [0.5]]`.
 
-通过模型运行两个 `npy` 文件以获取输出 `y`, 请发出以下命令:
+通过模型运行两个 `npy` 文件以获取输出 `y`, 请使用以下命令:
 
 ```
 $ saved_model_cli run --dir /tmp/saved_model_dir --tag_set serve \
@@ -663,7 +661,7 @@ Result for output key y:
  [ 4]]
 ```
 
-使用 TensorFlow 调试器运行模型, 请发出以下命令:
+使用 TensorFlow 调试器运行模型, 请使用如下命令:
 
 ```
 $ saved_model_cli run --dir /tmp/saved_model_dir --tag_set serve \
@@ -687,17 +685,16 @@ saved_model.pb|saved_model.pbtxt
 
 其中：
 
-* `assets` 是包含辅助 (外部) 文件的子文件夹，如词汇表。 资产被复制到 SavedModel 位置, 并可在加载特定 `MetaGraphDef` 时被读取。
-* `assets.extra` 是一个子文件夹，其中较高级库和用户可以添加与模型共存的自己的资源，但不由图形加载。该子文件夹不由 SavedModel 库管理。
+* `assets` 是包含辅助 (外部) 文件的子文件夹，如词汇表。 资源文件被复制到 SavedModel 目录, 并可在加载特定 `MetaGraphDef` 时被读取。
+* `assets.extra` 是一个子文件夹，其中较高级库和用户可以添加与模型共存的自己的资源，但不由计算图加载。该子文件夹不由 SavedModel 库管理。
 * `variables` 是一个包含 `tf.train.Saver` 输出的子文件夹。
-* `saved_model.pb` 或 `saved_model.pbtxt` 是 SavedModel 协议缓冲区。它包含了作为 `MetaGraphDef` 协议缓冲区的图形定义。
+* `saved_model.pb` 或 `saved_model.pbtxt` 是 SavedModel 的 Protocol Buffer 数据，包含了 `MetaGraphDef` Protocol Buffer 格式的计算图定义的内容。
 
-单个 SavedModel 可以表示多个图形。在这种情况下, SavedModel 中的所有图形共享一组检查点 (变量) 和资产。例如, 下图显示了一个包含 3 个 `MetaGraphDef` 的 SavedModel, 三个图形共享同一组检查点和资产: 
+单个 SavedModel 可以表示多个计算图。在这种情况下, SavedModel 中的所有计算图共享一组检查点 (变量) 和资源。例如, 下图显示了一个包含 3 个 `MetaGraphDef` 的 SavedModel, 三个计算图共享同一组快照和资源: 
 
 ![SavedModel represents checkpoints, assets, and one or more MetaGraphDefs](../images/SavedModel.svg)
 
-每个图形都与一组特定的标签相关联, 能够
-在加载或还原操作期间进行标识。
+每个计算图都与一组特定的标签相关联, 能够在加载或还原操作期间识别不同的计算图。
 
 
 
