@@ -406,7 +406,7 @@ result = stub.Classify(request, 10.0)  # 10 secs timeout
 这个言简意赅的例子；更多信息请查阅 @{$deploy$Tensorflow Serving}
 文档和[示例](https://github.com/tensorflow/serving/tree/master/tensorflow_serving/example)。
 
-> 注意：`ClassificationRequest` 和 `RegressionRequest` 包含一个 `tensorflow.serving.Input` Protocol Buffer，，其中包含了一个 `tensorflow.Example` 的 Protocol Buffer 列表。不同的是， `PredictRequest` 包含了一个从特征名到特征值的映射关系，其中特征值是通过 `TensorProto` 编码的。相同的是，当调用 `Classify` 和 `Regress` API 的时候， TensorFlow 运行时会将序列化的 `tf.Examples` 输入计算图，因此 `serving_input_receiver_fn ()` 应当包含一个 `tf. parse_example ()` 操作。当调用普通的 `Predict` API 时，TensorFlow 在运行中会将原始的特征数据输入计算图，因此应当通过 `serving_input_receiver_fn ()` 进行传递。
+> 注意：`ClassificationRequest` 和 `RegressionRequest` 包含一个 `tensorflow.serving.Input` Protocol Buffer，其中包含了一个 `tensorflow.Example` 的 Protocol Buffer 列表。不同的是， `PredictRequest` 包含了一个从特征名到特征值的映射关系，其中特征值是通过 `TensorProto` 编码的。相同的是，当调用 `Classify` 和 `Regress` API 的时候， TensorFlow 运行时会将序列化的 `tf.Examples` 输入计算图，因此 `serving_input_receiver_fn ()` 应当包含一个 `tf. parse_example ()` 操作。当调用普通的 `Predict` API 时，TensorFlow 在运行中会将原始的特征数据输入计算图，因此应当通过 `serving_input_receiver_fn ()` 进行传递。
 
 
 <!-- TODO(soergel): give examples of making requests against this server, using
